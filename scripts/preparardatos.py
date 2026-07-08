@@ -1,26 +1,127 @@
-# Este script divide los datos, para simular la llegada de nuevos clientes, y guarda los datasets resultantes en las carpetas correspondientes.
 import pandas as pd
-from pathlib import Path
 
-# Crear las rutas
-RAW_PATH = Path("data/raw/Telco-Customer-Churn.csv")
-PROCESSED_PATH = Path("data/processed/initial_train.csv")
-NEW_DATA_PATH = Path("data/new/new_customers.csv")
+# Funciones para preprocesamiento de datos
+def load_data():
+    """Carga el dataset de entrenamiento."""
+    df = pd.read_csv("data/processed/initial_train.csv")
+    return df
 
-# Leer el dataset original
-df = pd.read_csv(RAW_PATH)
+def clean_data(df):
+    """Limpia y prepara el dataset."""
+    # Eliminar columna customerID
+    df = df.drop(columns=["customerID"])
 
-# Calcular el 80%
-division_index = int(len(df) * 0.8)
+    # Quitar espacios en blanco en nombres de columnas 
+    df.columns = df.columns.str.strip()
 
-# Dividir el dataset
-initial_data = df.iloc[:division_index]
-new_data = df.iloc[division_index:]
+    # Quitar espacios en blanco en valores de columnas de tipo string
+    str_cols = df.select_dtypes(include='object').columns
+    for col in str_cols:
+        df[col] = df[col].astype(str).str.strip()
 
-# Guardar los archivos
-initial_data.to_csv(PROCESSED_PATH, index=False)
-new_data.to_csv(NEW_DATA_PATH, index=False)
+    # Convertir TotalCharges el cual esta como str a numérico
+    df["TotalCharges"] = pd.to_numeric(
+    df["TotalCharges"],
+    errors="coerce")
 
-print(f"Dataset original: {len(df)} registros")
-print(f"Entrenamiento inicial: {len(initial_data)} registros")
-print(f"Nuevos datos: {len(new_data)} registros")
+    # Para completar los valores faltantes, se revisasn si esos clientes son nuevos (tenure=0), TotalCharges = 0 
+    mask_nuevos = df['TotalCharges'].isna() & (df['tenure'] == 0)
+    df.loc[mask_nuevos, 'TotalCharges'] = 0.0
+
+    # Si quedara algún NaN no explicado, se inserta con MonthlyCharges * tenure
+    df['TotalCharges'] = df['TotalCharges'].fillna(df['MonthlyCharges'] * df['tenure'])
+    print(df["TotalCharges"].isnull().sum())
+    print(df.dtypes)
+    
+    # Eliminar duplicados
+    duplicados = df.duplicated().sum()
+    df = df.drop_duplicates()
+
+    # Verificar rangos válidos en columnas numéricas
+    assert (df['tenure'] >= 0).all(), "Hay valores de tenure negativos"
+    assert (df['MonthlyCharges'] >= 0).all(), "Hay MonthlyCharges negativos"
+    assert (df['TotalCharges'] >= 0).all(), "Hay TotalCharges negativos"
+
+    # Tipos de datos finales
+    df['tenure'] = df['tenure'].astype(int)
+    df['MonthlyCharges'] = df['MonthlyCharges'].astype(float)
+
+    # TotalCharges a dos decimales
+    df['TotalCharges'] = df['TotalCharges'].round(2)
+
+    # Verificar valores únicos en columnas categóricas
+    print(df["Churn"].value_counts())
+    # Verificar proporción de valores en la columna Churn
+    print(df["Churn"].value_counts(normalize=True))
+
+    # Verificar si hay valores nulos en todas las columnas
+    print(df.isnull().all())
+
+    # Verificar valores únicos en todas las columnas
+    print(df.nunique())
+    return df
+
+
+def encode_features(X):
+    """Codifica las características categóricas en el dataset."""
+    X = pd.get_dummies(
+        X,
+        columns=X.select_dtypes(include="object").columns,
+        drop_first=True,
+        dtype=int
+    )
+
+    return X
+    pass
+
+
+def save_processed_data(X, y):
+    """Guarda el dataset limpio."""
+
+    df_processed = X.copy()
+
+    df_processed["Churn"] = y
+
+    df_processed.to_csv(
+        "data/processed/train_processed.csv",
+        index=False
+    )
+
+    print("Dataset procesado guardado correctamente.")
+
+def preprocess_data():
+    """Ejecuta todo el flujo de preprocesamiento."""
+    df = load_data()
+    df = clean_data(df)
+
+    # Separar variables predictoras y objetivo
+    X = df.drop("Churn", axis=1)
+    y = df["Churn"]
+
+    # Convertir Churn a 0 y 1
+    y = y.map({
+        "No": 0,
+        "Yes": 1
+    })
+
+    print(X.head())
+    print(y.head())
+    # Codificar las características categóricas
+    X = encode_features(X)
+    print("\nShape después del encoding:")
+    print(X.shape)
+
+    print("\nPrimeras columnas:")
+    print(X.columns)
+
+    print("\nPrimeras filas:")
+    print(X.head())
+
+    save_processed_data(X, y)
+
+
+if __name__ == "__main__":
+    preprocess_data()
+    pass
+
+
