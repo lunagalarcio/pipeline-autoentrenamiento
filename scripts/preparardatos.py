@@ -72,7 +72,6 @@ def encode_features(X):
     )
 
     return X
-    pass
 
 
 def save_processed_data(X, y):
@@ -88,6 +87,14 @@ def save_processed_data(X, y):
     )
 
     print("Dataset procesado guardado correctamente.")
+    
+def encode_target(y):
+    """Convierte la variable objetivo a valores binarios."""
+
+    return y.map({
+        "No": 0,
+        "Yes": 1
+    })
 
 def preprocess_data():
     """Ejecuta todo el flujo de preprocesamiento."""
