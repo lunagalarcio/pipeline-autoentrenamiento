@@ -92,3 +92,96 @@ dtype: int64
 2026-07-08 23:22:35,072 - INFO - utils - Métricas guardadas en reports/metrics_v5_20260708_232234.json
 2026-07-08 23:22:35,073 - INFO - utils - Archivos archivados correctamente.
 2026-07-08 23:24:22,005 - INFO - __main__ - No hay nuevos datos. Se mantiene el modelo actual.
+2026-07-08 23:38:24,109 - INFO - __main__ - No hay nuevos datos. Se mantiene el modelo actual.
+2026-07-08 23:39:01,164 - INFO - __main__ - Se detectaron nuevos datos. Reentrenando modelo...
+2026-07-08 23:39:02,564 - INFO - preparardatos - Validación de datos nuevos: OK
+2026-07-08 23:39:02,565 - INFO - __main__ - Dataset combinado: (7043, 21)
+2026-07-08 23:39:02,583 - INFO - preparardatos - TotalCharges nulos tras limpieza: 0
+2026-07-08 23:39:02,585 - INFO - preparardatos - Tipos de datos:
+gender                  str
+SeniorCitizen         int64
+Partner                 str
+Dependents              str
+tenure                int64
+PhoneService            str
+MultipleLines           str
+InternetService         str
+OnlineSecurity          str
+OnlineBackup            str
+DeviceProtection        str
+TechSupport             str
+StreamingTV             str
+StreamingMovies         str
+Contract                str
+PaperlessBilling        str
+PaymentMethod           str
+MonthlyCharges      float64
+TotalCharges        float64
+Churn                   str
+dtype: object
+2026-07-08 23:39:02,605 - INFO - preparardatos - Churn value counts:
+Churn
+No     5164
+Yes    1857
+Name: count, dtype: int64
+2026-07-08 23:39:02,606 - INFO - preparardatos - Churn proportions:
+Churn
+No     0.735508
+Yes    0.264492
+Name: proportion, dtype: float64
+2026-07-08 23:39:02,611 - INFO - preparardatos - Nulos por columna:
+gender              False
+SeniorCitizen       False
+Partner             False
+Dependents          False
+tenure              False
+PhoneService        False
+MultipleLines       False
+InternetService     False
+OnlineSecurity      False
+OnlineBackup        False
+DeviceProtection    False
+TechSupport         False
+StreamingTV         False
+StreamingMovies     False
+Contract            False
+PaperlessBilling    False
+PaymentMethod       False
+MonthlyCharges      False
+TotalCharges        False
+Churn               False
+dtype: bool
+2026-07-08 23:39:02,616 - INFO - preparardatos - Valores únicos por columna:
+gender                 2
+SeniorCitizen          2
+Partner                2
+Dependents             2
+tenure                73
+PhoneService           2
+MultipleLines          3
+InternetService        3
+OnlineSecurity         3
+OnlineBackup           3
+DeviceProtection       3
+TechSupport            3
+StreamingTV            3
+StreamingMovies        3
+Contract               3
+PaperlessBilling       2
+PaymentMethod          4
+MonthlyCharges      1585
+TotalCharges        6531
+Churn                  2
+dtype: int64
+2026-07-08 23:39:02,656 - INFO - utils - Scaler guardado en: models/scaler_v6_20260708_233902.pkl
+2026-07-08 23:39:02,678 - INFO - utils - Modelo guardado en models/model_v6_20260708_233902.pkl
+2026-07-08 23:39:02,687 - INFO - utils - Métricas del modelo:
+2026-07-08 23:39:02,687 - INFO - utils -   accuracy: 0.7936
+2026-07-08 23:39:02,687 - INFO - utils -   precision: 0.5969
+2026-07-08 23:39:02,687 - INFO - utils -   recall: 0.5426
+2026-07-08 23:39:02,688 - INFO - utils -   f1_score: 0.5685
+2026-07-08 23:39:02,689 - INFO - utils - Matriz de confusión:
+[[924 129]
+ [161 191]]
+2026-07-08 23:39:02,690 - INFO - utils - Métricas guardadas en reports/metrics_v6_20260708_233902.json
+2026-07-08 23:39:02,691 - INFO - utils - Archivos archivados correctamente.

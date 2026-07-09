@@ -115,6 +115,30 @@ def save_model(model, version):
 
     logger.info(f"Modelo guardado en {path}")
     
+def get_latest_model():
+    pattern = re.compile(r"model_v(\d+)_\d+T\d+\.pkl")
+    model_files = []
+    for file in os.listdir("models"):
+        match = pattern.match(file)
+        if match:
+            model_files.append((int(match.group(1)), file))
+    if not model_files:
+        return None
+    model_files.sort(key=lambda x: x[0], reverse=True)
+    return os.path.join("models", model_files[0][1])
+
+def get_latest_scaler():
+    pattern = re.compile(r"scaler_v(\d+)_\d+T\d+\.pkl")
+    scaler_files = []
+    for file in os.listdir("models"):
+        match = pattern.match(file)
+        if match:
+            scaler_files.append((int(match.group(1)), file))
+    if not scaler_files:
+        return None
+    scaler_files.sort(key=lambda x: x[0], reverse=True)
+    return os.path.join("models", scaler_files[0][1])
+
 def save_scaler(scaler):
 
     filename = get_next_version(
