@@ -1,5 +1,8 @@
 import os
 import subprocess
+from utils import get_logger
+
+logger = get_logger(__name__)
 
 def model_exists():
     folder = "models"
@@ -39,22 +42,19 @@ def main():
 
     if not model_exists():
 
-        print("No existe un modelo entrenado.")
-        print("Entrenando modelo inicial...")
+        logger.info("No existe un modelo entrenado. Entrenando modelo inicial...")
 
         train()
 
     elif new_data_exists():
 
-        print("Se detectaron nuevos datos.")
-        print("Reentrenando modelo...")
+        logger.info("Se detectaron nuevos datos. Reentrenando modelo...")
 
         retrain()
 
     else:
 
-        print("No hay nuevos datos.")
-        print("Se mantiene el modelo actual.")
+        logger.info("No hay nuevos datos. Se mantiene el modelo actual.")
 
 
 if __name__ == "__main__":

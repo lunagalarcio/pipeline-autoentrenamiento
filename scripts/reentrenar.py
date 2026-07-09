@@ -3,7 +3,6 @@ import os
 import shutil
 from datetime import datetime
 
-# importar funciones que se usan en otros scripts
 from utils import (
     create_version,
     evaluate_model,
@@ -13,14 +12,18 @@ from utils import (
     scale_features,
     train_model,
     save_model,
-    archive_new_data
+    archive_new_data,
+    get_logger
 )
+
+logger = get_logger(__name__)
 
 # importar funciones de preparardatos.py
 from preparardatos import (
     clean_data,
     encode_features,
-    encode_target
+    encode_target,
+    validate_new_data
 )
 
 # funcion para cargar el dataset inicial
@@ -29,10 +32,6 @@ def load_old_data():
 
 # funcion para cargar el dataset de nuevos clientes
 def load_new_data():
-    """
-    Carga todos los archivos CSV nuevos.
-    """
-
     folder = "data/new"
 
     csv_files = [
@@ -66,7 +65,7 @@ def merge_data(old_data, new_data):
         ignore_index=True
     )
 
-    print(f"Dataset combinado: {df.shape}")
+    logger.info(f"Dataset combinado: {df.shape}")
 
     return df
 
@@ -79,13 +78,18 @@ def main():
 
     if new_data is None:
 
-        print("No hay datos nuevos para reentrenar.")
+        logger.info("No hay datos nuevos para reentrenar.")
 
         return
 
 # Cargar datasets
     old_data = load_old_data()
     new_data = load_new_data()
+
+# Validar calidad de los datos nuevos antes de reentrenar
+    valido, errores = validate_new_data(new_data, old_data)
+    if not valido:
+        return
 
 # Unir datos
     df = merge_data(old_data, new_data)

@@ -20,26 +20,37 @@ jobs:
       - name: Clonar repositorio
         uses: actions/checkout@v4
 
+      - name: Verificar si hay datos nuevos
+        id: check-data
+        run: |
+          count=$(ls -1 data/new/*.csv 2>/dev/null | wc -l)
+          echo "new_data=$count" >> $GITHUB_OUTPUT
+
       - name: Configurar Python
+        if: steps.check-data.outputs.new_data != '0'
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
 
       - name: Instalar dependencias
+        if: steps.check-data.outputs.new_data != '0'
         run: |
           python -m pip install --upgrade pip
           pip install -r dependencias.txt
 
       - name: Verificar estructura del proyecto
+        if: steps.check-data.outputs.new_data != '0'
         run: |
           echo "Contenido del proyecto:"
           ls -R
 
       - name: Ejecutar pipeline automático
+        if: steps.check-data.outputs.new_data != '0'
         run: |
           python scripts/main.py
 
       - name: Mostrar artefactos generados
+        if: steps.check-data.outputs.new_data != '0'
         run: |
           echo "=== Modelos ==="
           ls -R models || true
@@ -49,3 +60,7 @@ jobs:
 
           echo "=== Datos archivados ==="
           ls -R data/archive || true
+
+      - name: Sin datos nuevos
+        if: steps.check-data.outputs.new_data == '0'
+        run: echo "No hay datos nuevos en data/new/. Se omite el pipeline."

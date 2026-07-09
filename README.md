@@ -6,7 +6,7 @@ El proyecto simula un escenario de MLOps donde un modelo debe actualizarse autom
 
 ---
 
-# Objetivo
+## Objetivo
 
 Los modelos de Machine Learning pierden precisión con el tiempo debido a que el comportamiento de los datos cambia (Data Drift).
 
@@ -28,6 +28,7 @@ Todo el proceso puede ejecutarse automáticamente mediante **GitHub Actions**.
 
 El workflow `.github/workflows/pipeline.yml` se activa de dos formas:
 - **Automática**: al hacer `push` a la rama `main`.
+- **Programada**: diariamente a las 3:00 AM UTC (`cron: "0 3 * * *"`).
 - **Manual**: desde la pestaña Actions con `workflow_dispatch`.
 
 Ejecuta en un runner `ubuntu-latest`:
@@ -106,7 +107,7 @@ El contador de versión se incrementa automáticamente según los archivos exist
 ---
 ## Diagrama de Actividades del Pipeline de Autoentrenamiento
 
-![Pipeline](docs/images/diagrama.png)
+![Pipeline](docs/diagrama.png)
 
 ---
 ## Estructura del Proyecto
@@ -167,6 +168,14 @@ El pipeline genera automáticamente:
 - Datos archivados
 
 Todo el proceso se ejecuta sin intervención manual cuando se detectan nuevos datos.
+
+## Decisiones de Diseño
+
+Se eligió GitHub Actions porque permite automatizar el pipeline sin necesidad de mantener un servidor propio.
+
+Se implementó un versionado automático de modelos para conservar un historial completo del entrenamiento y facilitar comparaciones o rollback.
+
+Los datos procesados se mueven automáticamente a `data/archive` para evitar que sean utilizados nuevamente en futuros reentrenamientos.
 
 ---
 

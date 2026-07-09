@@ -1,4 +1,7 @@
 import pandas as pd
+from utils import get_logger
+
+logger = get_logger(__name__)
 
 # Funciones para preprocesamiento de datos
 def load_data():
@@ -29,8 +32,8 @@ def clean_data(df):
 
     # Si quedara algún NaN no explicado, se inserta con MonthlyCharges * tenure
     df['TotalCharges'] = df['TotalCharges'].fillna(df['MonthlyCharges'] * df['tenure'])
-    print(df["TotalCharges"].isnull().sum())
-    print(df.dtypes)
+    logger.info(f"TotalCharges nulos tras limpieza: {df['TotalCharges'].isnull().sum()}")
+    logger.info(f"Tipos de datos:\n{df.dtypes}")
     
     # Eliminar duplicados
     duplicados = df.duplicated().sum()
@@ -48,16 +51,10 @@ def clean_data(df):
     # TotalCharges a dos decimales
     df['TotalCharges'] = df['TotalCharges'].round(2)
 
-    # Verificar valores únicos en columnas categóricas
-    print(df["Churn"].value_counts())
-    # Verificar proporción de valores en la columna Churn
-    print(df["Churn"].value_counts(normalize=True))
-
-    # Verificar si hay valores nulos en todas las columnas
-    print(df.isnull().all())
-
-    # Verificar valores únicos en todas las columnas
-    print(df.nunique())
+    logger.info(f"Churn value counts:\n{df['Churn'].value_counts()}")
+    logger.info(f"Churn proportions:\n{df['Churn'].value_counts(normalize=True)}")
+    logger.info(f"Nulos por columna:\n{df.isnull().all()}")
+    logger.info(f"Valores únicos por columna:\n{df.nunique()}")
     return df
 
 # Función para separar variables predictoras y variable objetivo
@@ -82,7 +79,7 @@ def save_processed_data(X, y):
         index=False
     )
 
-    print("Dataset procesado guardado correctamente.")
+    logger.info("Dataset procesado guardado correctamente.")
 
 # Función para convertir la variable objetivo a valores binarios
 def encode_target(y):
@@ -93,6 +90,61 @@ def encode_target(y):
         "No": 0,
         "Yes": 1
     })
+
+# Función para validar calidad de datos nuevos antes de reentrenar
+def validate_new_data(new_df, reference_df, max_null_pct=10):
+    errores = []
+    expected_cols = set(reference_df.columns)
+    new_cols = set(new_df.columns)
+
+    if new_cols != expected_cols:
+        faltan = expected_cols - new_cols
+        sobran = new_cols - expected_cols
+        if faltan:
+            errores.append(f"Faltan columnas: {faltan}")
+        if sobran:
+            errores.append(f"Columnas no esperadas: {sobran}")
+
+    for col in new_df.columns:
+        null_pct = new_df[col].isnull().mean() * 100
+        if null_pct > max_null_pct:
+            errores.append(f"Columna '{col}' tiene {null_pct:.1f}% de nulos (max {max_null_pct}%)")
+
+    if "Churn" in new_df.columns:
+        valores_esperados = {"Yes", "No", 0, 1, "0", "1"}
+        valores_reales = set(new_df["Churn"].dropna().unique())
+        if not valores_reales.issubset(valores_esperados):
+            inesperados = valores_reales - valores_esperados
+            errores.append(f"Columna 'Churn' tiene valores inesperados: {inesperados}")
+
+    if "tenure" in new_df.columns:
+        tenure_num = pd.to_numeric(new_df["tenure"], errors="coerce")
+        negativos = (tenure_num < 0).sum()
+        if negativos > 0:
+            errores.append(f"Columna 'tenure' tiene {negativos} valores negativos")
+
+    if "MonthlyCharges" in new_df.columns:
+        mc_num = pd.to_numeric(new_df["MonthlyCharges"], errors="coerce")
+        negativos = (mc_num < 0).sum()
+        if negativos > 0:
+            errores.append(f"Columna 'MonthlyCharges' tiene {negativos} valores negativos")
+
+    if "TotalCharges" in new_df.columns:
+        tc_num = pd.to_numeric(new_df["TotalCharges"], errors="coerce")
+        negativos = (tc_num < 0).sum()
+        if negativos > 0:
+            errores.append(f"Columna 'TotalCharges' tiene {negativos} valores negativos")
+
+    if errores:
+        logger.error("=== VALIDACIÓN FALLIDA ===")
+        for e in errores:
+            logger.error(f"  - {e}")
+        logger.error("Los datos nuevos no serán procesados.")
+        return False, errores
+
+    logger.info("Validación de datos nuevos: OK")
+    return True, []
+
 
 # Función principal para ejecutar el flujo de preprocesamiento
 def preprocess_data():
@@ -105,22 +157,13 @@ def preprocess_data():
 
     y = encode_target(y)
 
-    print(X.head())
-    print(y.head())
-    # Codificar las características categóricas
     X = encode_features(X)
-    print("\nShape después del encoding:")
-    print(X.shape)
-
-    print("\nPrimeras columnas:")
-    print(X.columns)
-
-    print("\nPrimeras filas:")
-    print(X.head())
+    logger.info(f"Shape después del encoding: {X.shape}")
+    logger.info(f"Columnas: {list(X.columns)}")
+    logger.info(f"Primeras filas:\n{X.head()}")
 
     save_processed_data(X, y)
-    print("Dataset procesado correctamente.")
-    print("Shape final:", X.shape)
+    logger.info(f"Dataset procesado correctamente. Shape final: {X.shape}")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,8 @@
 import json
 import os
 import joblib
+import logging
+from logging.handlers import RotatingFileHandler
 import shutil
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -17,9 +19,35 @@ from sklearn.metrics import (
     confusion_matrix
 )
 
+
+def get_logger(name):
+    logger = logging.getLogger(name)
+    if logger.handlers:
+        return logger
+    logger.setLevel(logging.INFO)
+    os.makedirs("logs", exist_ok=True)
+    file_handler = RotatingFileHandler(
+        "logs/pipeline.log",
+        maxBytes=5 * 1024 * 1024,
+        backupCount=3,
+        encoding="utf-8"
+    )
+    file_handler.setLevel(logging.INFO)
+    file_format = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
+    file_handler.setFormatter(file_format)
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    console_format = logging.Formatter("%(levelname)s: %(message)s")
+    console_handler.setFormatter(console_format)
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
+    return logger
+
+
+logger = get_logger(__name__)
+
 # funcion para separar variables predictoras y variable objetivo
 def split_features_target(df):
-    """Separa variables predictoras y variable objetivo."""
 
     X = df.drop("Churn", axis=1)
 
@@ -53,7 +81,6 @@ def train_model(X_train, y_train):
 
 # funcion para escalar las variables numericas
 def scale_features(X_train, X_test, scaler_path):
-    """Escala las variables numéricas y guarda el scaler."""
 
     X_train = X_train.copy()
     X_test = X_test.copy()
@@ -76,7 +103,7 @@ def scale_features(X_train, X_test, scaler_path):
 
     joblib.dump(scaler, scaler_path)
 
-    print(f"Scaler guardado en: {scaler_path}")
+    logger.info(f"Scaler guardado en: {scaler_path}")
 
     return X_train, X_test
 
@@ -86,7 +113,7 @@ def save_model(model, version):
 
     joblib.dump(model, path)
 
-    print(f"Modelo guardado en {path}")
+    logger.info(f"Modelo guardado en {path}")
     
 def save_scaler(scaler):
 
@@ -99,13 +126,11 @@ def save_scaler(scaler):
 
     joblib.dump(scaler, path)
 
-    print(f"Scaler guardado en {path}")
+    logger.info(f"Scaler guardado en {path}")
 
     return path
 
 def evaluate_model(model, X_test, y_test):
-    """Evalúa el modelo y devuelve sus métricas."""
-
     y_pred = model.predict(X_test)
 
     metrics = {
@@ -115,22 +140,13 @@ def evaluate_model(model, X_test, y_test):
         "f1_score": f1_score(y_test, y_pred)
     }
 
-    print("\nMétricas del modelo")
+    logger.info("Métricas del modelo:")
     for key, value in metrics.items():
-        print(f"{key}: {value:.4f}")
-
-    print("\nMatriz de confusión")
-    print(confusion_matrix(y_test, y_pred))
+        logger.info(f"  {key}: {value:.4f}")
+    logger.info(f"Matriz de confusión:\n{confusion_matrix(y_test, y_pred)}")
 
     return metrics
 def create_version():
-    """
-    Genera la siguiente versión disponible.
-
-    Ejemplo:
-    v3_20260708_154530
-    """
-
     os.makedirs("models", exist_ok=True)
 
     versions = []
@@ -162,11 +178,9 @@ def save_metrics(metrics, version):
             indent=4
         )
 
-    print(f"Métricas guardadas en {path}")
+    logger.info(f"Métricas guardadas en {path}")
 
 def transform_features(X, scaler):
-    """Escala un conjunto de datos usando un scaler ya entrenado."""
-
     X = X.copy()
 
     numerical_columns = [
@@ -182,14 +196,6 @@ def transform_features(X, scaler):
     return X
 
 def get_next_version(folder, prefix):
-    """
-    Obtiene la siguiente versión disponible y genera un nombre
-    con versión y fecha.
-
-    Ejemplo:
-    model_v3_20260708_154010.pkl
-    """
-
     os.makedirs(folder, exist_ok=True)
 
     pattern = re.compile(rf"{prefix}_v(\d+)")
@@ -240,4 +246,4 @@ def archive_new_data():
 
         shutil.move(source_path, destination_path)
 
-    print("Archivos archivados correctamente.")
+    logger.info("Archivos archivados correctamente.")

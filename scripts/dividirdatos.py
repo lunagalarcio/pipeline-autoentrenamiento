@@ -1,6 +1,8 @@
-# Este script divide los datos, para simular la llegada de nuevos clientes, y guarda los datasets resultantes en las carpetas correspondientes.
 import pandas as pd
 from pathlib import Path
+from utils import get_logger
+
+logger = get_logger(__name__)
 
 # Crear las rutas
 RAW_PATH = Path("data/raw/Telco-Customer-Churn.csv")
@@ -21,6 +23,6 @@ new_data = df.iloc[division_index:]
 initial_data.to_csv(PROCESSED_PATH, index=False)
 new_data.to_csv(NEW_DATA_PATH, index=False)
 
-print(f"Dataset original: {len(df)} registros")
-print(f"Entrenamiento inicial: {len(initial_data)} registros")
-print(f"Nuevos datos: {len(new_data)} registros")
+logger.info(f"Dataset original: {len(df)} registros")
+logger.info(f"Entrenamiento inicial: {len(initial_data)} registros")
+logger.info(f"Nuevos datos: {len(new_data)} registros")
