@@ -2,12 +2,11 @@ import pandas as pd
 
 # Funciones para preprocesamiento de datos
 def load_data():
-    """Carga el dataset de entrenamiento."""
     df = pd.read_csv("data/processed/initial_train.csv")
     return df
 
+# Función para limpiar y transformar los datos
 def clean_data(df):
-    """Limpia y prepara el dataset."""
     # Eliminar columna customerID
     df = df.drop(columns=["customerID"])
 
@@ -61,9 +60,8 @@ def clean_data(df):
     print(df.nunique())
     return df
 
-
+# Función para separar variables predictoras y variable objetivo
 def encode_features(X):
-    """Codifica las características categóricas en el dataset."""
     X = pd.get_dummies(
         X,
         columns=X.select_dtypes(include="object").columns,
@@ -73,10 +71,8 @@ def encode_features(X):
 
     return X
 
-
+# funcion para separar variables predictoras y objetivo
 def save_processed_data(X, y):
-    """Guarda el dataset limpio."""
-
     df_processed = X.copy()
 
     df_processed["Churn"] = y
@@ -87,17 +83,19 @@ def save_processed_data(X, y):
     )
 
     print("Dataset procesado guardado correctamente.")
-    
+
+# Función para convertir la variable objetivo a valores binarios
 def encode_target(y):
-    """Convierte la variable objetivo a valores binarios."""
+    if set(y.unique()) <= {0, 1}:
+        return y
 
     return y.map({
         "No": 0,
         "Yes": 1
     })
 
+# Función principal para ejecutar el flujo de preprocesamiento
 def preprocess_data():
-    """Ejecuta todo el flujo de preprocesamiento."""
     df = load_data()
     df = clean_data(df)
 
@@ -105,11 +103,7 @@ def preprocess_data():
     X = df.drop("Churn", axis=1)
     y = df["Churn"]
 
-    # Convertir Churn a 0 y 1
-    y = y.map({
-        "No": 0,
-        "Yes": 1
-    })
+    y = encode_target(y)
 
     print(X.head())
     print(y.head())
@@ -125,6 +119,8 @@ def preprocess_data():
     print(X.head())
 
     save_processed_data(X, y)
+    print("Dataset procesado correctamente.")
+    print("Shape final:", X.shape)
 
 
 if __name__ == "__main__":

@@ -1,10 +1,13 @@
 import json
 import os
 import joblib
+import shutil
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
+import re
+from datetime import datetime
 
 from sklearn.metrics import (
     accuracy_score,
@@ -77,14 +80,28 @@ def scale_features(X_train, X_test, scaler_path):
 
     return X_train, X_test
 
-def save_model(model, path):
-    """Guarda el modelo entrenado."""
+def save_model(model, version):
+
+    path = f"models/model_{version}.pkl"
 
     joblib.dump(model, path)
 
     print(f"Modelo guardado en {path}")
+    
+def save_scaler(scaler):
 
-    print("Modelo guardado correctamente.")
+    filename = get_next_version(
+        "models",
+        "scaler"
+    )
+
+    path = f"models/{filename}.pkl"
+
+    joblib.dump(scaler, path)
+
+    print(f"Scaler guardado en {path}")
+
+    return path
 
 def evaluate_model(model, X_test, y_test):
     """Evalúa el modelo y devuelve sus métricas."""
@@ -106,16 +123,46 @@ def evaluate_model(model, X_test, y_test):
     print(confusion_matrix(y_test, y_pred))
 
     return metrics
+def create_version():
+    """
+    Genera la siguiente versión disponible.
 
-def save_metrics(metrics, path):
-    """Guarda las métricas del modelo."""
+    Ejemplo:
+    v3_20260708_154530
+    """
 
-    os.makedirs("reports", exist_ok=True)
+    os.makedirs("models", exist_ok=True)
+
+    versions = []
+
+    pattern = re.compile(r"model_v(\d+)")
+
+    for file in os.listdir("models"):
+
+        match = pattern.match(file)
+
+        if match:
+            versions.append(int(match.group(1)))
+
+    next_version = 1 if not versions else max(versions) + 1
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    return f"v{next_version}_{timestamp}"
+
+def save_metrics(metrics, version):
+
+    path = f"reports/metrics_{version}.json"
 
     with open(path, "w") as file:
-        json.dump(metrics, file, indent=4)
 
-    print(f"Métricas guardadas en: {path}")
+        json.dump(
+            metrics,
+            file,
+            indent=4
+        )
+
+    print(f"Métricas guardadas en {path}")
 
 def transform_features(X, scaler):
     """Escala un conjunto de datos usando un scaler ya entrenado."""
@@ -133,3 +180,64 @@ def transform_features(X, scaler):
     )
 
     return X
+
+def get_next_version(folder, prefix):
+    """
+    Obtiene la siguiente versión disponible y genera un nombre
+    con versión y fecha.
+
+    Ejemplo:
+    model_v3_20260708_154010.pkl
+    """
+
+    os.makedirs(folder, exist_ok=True)
+
+    pattern = re.compile(rf"{prefix}_v(\d+)")
+
+    versions = []
+
+    for file in os.listdir(folder):
+
+        match = pattern.match(file)
+
+        if match:
+            versions.append(int(match.group(1)))
+
+    next_version = 1 if not versions else max(versions) + 1
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    filename = f"{prefix}_v{next_version}_{timestamp}"
+
+    return filename
+
+# funcion para archivar los nuevos datos
+def archive_new_data():
+    source_folder = "data/new"
+    archive_folder = "data/archive"
+
+    os.makedirs(archive_folder, exist_ok=True)
+
+    for file in os.listdir(source_folder):
+
+        if not file.endswith(".csv"):
+            continue
+
+        source_path = os.path.join(source_folder, file)
+        destination_path = os.path.join(archive_folder, file)
+
+        # Si ya existe un archivo con ese nombre
+        if os.path.exists(destination_path):
+
+            name, extension = os.path.splitext(file)
+
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+            destination_path = os.path.join(
+                archive_folder,
+                f"{name}_{timestamp}{extension}"
+            )
+
+        shutil.move(source_path, destination_path)
+
+    print("Archivos archivados correctamente.")
